@@ -1,5 +1,6 @@
 from pynput import mouse, keyboard
 import time
+import os
 
 # Variables to store mouse movements
 mouse_movements = []
@@ -7,6 +8,16 @@ recording = False
 
 # Define hotkey (F2)
 start_stop_key = keyboard.Key.f2
+
+# Show banner and description
+print("""
+----------------------------------
+CREATED BY KEENAN D
+
+Press F2 to start/stop recording.
+Press ESC to exit the program.
+----------------------------------
+""")
 
 # Mouse event handler
 def on_move(x, y):
@@ -35,8 +46,10 @@ def on_release(key):
 
 # Generate Lua script
 def generate_lua_script():
-    with open("mouse_movements.lua", "w") as f:
+    output_file = "mouse_movements.lua"
+    with open(output_file, "w") as f:
         f.write("-- CREATED BY KEENAN D\n")
+        f.write("-- Lua script for mouse movements\n")
         f.write("function OnEvent(event, arg)\n")
         f.write("    if (event == \"PROFILE_ACTIVATED\") then\n")
         f.write("        EnablePrimaryMouseButtonEvents(true)\n")
@@ -49,7 +62,7 @@ def generate_lua_script():
                 f.write(f"    MoveMouseRelative({dx}, {dy})\n")
                 f.write(f"    Sleep({int(dt * 1000)})\n")
         f.write("end\n")
-    print("Lua script generated: mouse_movements.lua")
+    print(f"Lua script generated: {os.path.abspath(output_file)}")
 
 # Start listeners
 mouse_listener = mouse.Listener(on_move=on_move)
