@@ -36,6 +36,7 @@ def on_release(key):
 # Generate Lua script
 def generate_lua_script():
     with open("mouse_movements.lua", "w") as f:
+        f.write("-- CREATED BY KEENAN D\n")
         f.write("function OnEvent(event, arg)\n")
         f.write("    if (event == \"PROFILE_ACTIVATED\") then\n")
         f.write("        EnablePrimaryMouseButtonEvents(true)\n")
