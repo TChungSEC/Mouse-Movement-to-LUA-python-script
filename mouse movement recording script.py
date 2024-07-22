@@ -2,31 +2,63 @@ from pynput import mouse, keyboard
 import time
 import os
 
-# Variables to store mouse movements
+# Variables to store mouse movements and settings
 mouse_movements = []
 recording = False
+start_stop_key = keyboard.Key.f2  # Default hotkey
+save_directory = os.path.dirname(os.path.abspath(__file__))  # Default to script's directory
 
-# Define hotkey (F2)
-start_stop_key = keyboard.Key.f2
-
-# Show banner and description
-print("""
+def print_banner():
+    """Print the initial banner and instructions."""
+    print(f"""
 ----------------------------------
 CREATED BY KEENAN D
 
-Press F2 to start/stop recording.
+Press the current hotkey ({map_key(start_stop_key)}) to start/stop recording.
+Press F1 to change hotkey.
 Press ESC to exit the program.
 ----------------------------------
 """)
 
-# Mouse event handler
+def change_hotkey():
+    """Prompt user to press a new hotkey."""
+    global start_stop_key
+    print("Press any key to set as the new hotkey:")
+    with keyboard.Listener(on_press=on_key_for_hotkey) as listener:
+        listener.join()
+
+def on_key_for_hotkey(key):
+    """Handle key press events for changing hotkey."""
+    global start_stop_key
+    try:
+        # Check if key is a special key or a character key
+        if isinstance(key, keyboard.Key):
+            start_stop_key = key
+        elif isinstance(key, keyboard.KeyCode):
+            start_stop_key = key
+        print(f"Hotkey changed to: {map_key(start_stop_key)}")
+        # Reload banner with new hotkey
+        print_banner()
+        return False  # Stop the listener after setting the new hotkey
+    except AttributeError:
+        pass
+
+def map_key(key):
+    """Map key object or string to its name."""
+    if isinstance(key, keyboard.Key):
+        return key.name.capitalize()
+    elif isinstance(key, keyboard.KeyCode):
+        return key.char.upper()
+    return str(key)
+
 def on_move(x, y):
+    """Record mouse movements."""
     if recording:
         mouse_movements.append((x, y, time.time()))
 
-# Keyboard event handler
 def on_press(key):
-    global recording
+    """Handle key press events."""
+    global recording, start_stop_key
     try:
         if key == start_stop_key:
             recording = not recording
@@ -36,17 +68,26 @@ def on_press(key):
             else:
                 print("Recording stopped.")
                 generate_lua_script()
+        elif key == keyboard.Key.f1:  # Change hotkey using F1
+            change_hotkey()
     except AttributeError:
         pass
 
 def on_release(key):
+    """Stop the program if ESC is pressed."""
     if key == keyboard.Key.esc:
-        # Stop listener
         return False
 
-# Generate Lua script
 def generate_lua_script():
-    output_file = "mouse_movements.lua"
+    """Generate Lua script and save to file with automatic sequential naming."""
+    base_filename = "mouse_movements"
+    extension = ".lua"
+    file_number = 1
+    output_file = os.path.join(save_directory, f"{base_filename}{file_number}{extension}")
+    while os.path.exists(output_file):
+        file_number += 1
+        output_file = os.path.join(save_directory, f"{base_filename}{file_number}{extension}")
+
     with open(output_file, "w") as f:
         f.write("-- CREATED BY KEENAN D\n")
         f.write("-- Lua script for mouse movements\n")
@@ -63,6 +104,9 @@ def generate_lua_script():
                 f.write(f"    Sleep({int(dt * 1000)})\n")
         f.write("end\n")
     print(f"Lua script generated: {os.path.abspath(output_file)}")
+
+# Print the initial banner
+print_banner()
 
 # Start listeners
 mouse_listener = mouse.Listener(on_move=on_move)
